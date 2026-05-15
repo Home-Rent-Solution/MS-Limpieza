@@ -9,5 +9,6 @@ import java.util.List;
 public interface LimpiezaRepository extends JpaRepository<Limpieza, Long> {
 
     List<Limpieza> findByIdLimpieza(Long idLimpieza);
+    List<Limpieza> findByIdReserva(Long idReserva);
     List<Limpieza> findByIdPropiedad(Long idPropiedad);
 }

@@ -2,6 +2,7 @@ package com.HomeRentSolution.ms_limpieza.client;
 
 import com.HomeRentSolution.ms_limpieza.dto.LimpiezaRequestDTO;
 import com.HomeRentSolution.ms_limpieza.dto.LimpiezaResponseDTO;
+import com.HomeRentSolution.ms_limpieza.dto.ReservaDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,12 +10,7 @@ import org.springframework.web.bind.annotation.*;
 public interface LimpiezaClient {
 
     @GetMapping("/api/limpieza/{id}")
-    String obtenerPorId(@PathVariable Long id);
+    String obtenerPorId(@PathVariable("id") Long idLimpieza);
 
-    @PostMapping("/api/limpieza/agendar")
-    LimpiezaResponseDTO agendarLimpieza(@RequestBody LimpiezaRequestDTO dto);
-
-    @PutMapping("/api/limpieza/{id}/cancelar")
-    void cancelarLimpieza(@PathVariable("id") Long idLimpieza);
 
 }

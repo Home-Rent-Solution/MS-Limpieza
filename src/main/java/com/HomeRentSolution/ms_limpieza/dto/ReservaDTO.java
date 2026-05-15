@@ -11,6 +11,8 @@ public class ReservaDTO {
     private Long idReserva;
     private Long idPropiedad;
     private Long idInquilino;
-    private BigDecimal montoTotal;
     private LocalDateTime fechaVencimiento;
+    private LocalDateTime fechaFin;
+    private String estadoReserva;
+
 }

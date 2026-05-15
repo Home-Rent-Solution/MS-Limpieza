@@ -11,5 +11,5 @@ public class LimpiezaResponseDTO {
     private Long idPropiedad;
     private Long idReserva;
     private LocalDateTime fechaProgramada;
-    private EstadoLimpieza estado;
+    private EstadoLimpieza estadoLimpieza;
 }

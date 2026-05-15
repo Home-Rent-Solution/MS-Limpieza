@@ -2,12 +2,14 @@ package com.HomeRentSolution.ms_limpieza.client;
 
 import com.HomeRentSolution.ms_limpieza.dto.LimpiezaRequestDTO;
 import com.HomeRentSolution.ms_limpieza.dto.LimpiezaResponseDTO;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.*;
 
-public interface EspecialidadClient {
+@FeignClient(name = "ms-limpieza", url= "${ms.limpieza.url}")
+public interface LimpiezaClient {
+
+    @GetMapping("/api/limpieza/{id}")
+    String obtenerPorId(@PathVariable Long id);
 
     @PostMapping("/api/limpieza/agendar")
     LimpiezaResponseDTO agendarLimpieza(@RequestBody LimpiezaRequestDTO dto);

@@ -37,6 +37,11 @@ public class LimpiezaController {
 
 
     }
+    @PutMapping("/reserva/{idReserva}/cancelar")
+    public ResponseEntity<Void> cancelarLimpiezaPorReserva(@PathVariable Long idReserva) {
+        limpiezaService.cancelarPorIdReserva(idReserva);
+        return ResponseEntity.noContent().build();
+    }
 
 
     // 1. Personal inicia limpieza

@@ -18,8 +18,15 @@ public class LimpiezaService {
     private final LimpiezaRepository limpiezaRepository;
 
     public LimpiezaResponseDTO buscarPorId(Long id) {
-        return limpiezaRepository.findById(id)
+
+        Limpieza limpieza = limpiezaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+
+        LimpiezaResponseDTO dto = new LimpiezaResponseDTO();
+        dto.setIdLimpieza(limpieza.getIdLimpieza());
+
+
+        return dto;
     }
 
 
@@ -28,10 +35,18 @@ public class LimpiezaService {
     }
 
 
-    public List<LimpiezaResponseDTO> buscarTodas() { return limpiezaRepository.findAll(); }
+    public List<LimpiezaResponseDTO> buscarTodas() { return limpiezaRepository.findAll()
+            .stream()
+            .map(limpieza -> {
+                LimpiezaResponseDTO dto = new LimpiezaResponseDTO();
+                dto.setIdLimpieza(limpieza.getIdLimpieza());
+
+                return dto;
+            })
+            .toList(); }
 
 
-    public LimpiezaResponseDTO crearLimpieza(ReservaDTO request) {
+    public LimpiezaResponseDTO agendarLimpieza(ReservaDTO request) {
         Limpieza nuevaLimpieza = new Limpieza();
 
         nuevaLimpieza.setIdReserva(request.getIdReserva());
@@ -64,7 +79,13 @@ public class LimpiezaService {
         limpieza.setEstadoLimpieza(nuevoEstado);
         limpiezaRepository.save(limpieza);
 
-        return mapearResponse(limpieza);
+        LimpiezaResponseDTO dto = new LimpiezaResponseDTO();
+        dto.setIdLimpieza(limpieza.getIdLimpieza());
+
+
+        return dto;
+
+
     }
 
     private boolean transicionPermitida(EstadoLimpieza actual, EstadoLimpieza nuevo) {
@@ -92,14 +113,16 @@ public class LimpiezaService {
 
         Limpieza guardarCancelacion = limpiezaRepository.save(limpieza);
 
+        LimpiezaResponseDTO LResponse = new LimpiezaResponseDTO();
+
         if (reservaResponseDTO.getIdLimpieza() != null) {
             limpiezaClient.cancelarLimpieza(
                     reserva.getIdLimpieza(),
-                    EstadoLimpieza.CANCELADA_POR_SISTEMA,  // ← El estado lo decide Reservas
+                    EstadoLimpieza.CANCELADA_POR_SISTEMA,
                     "Reserva cancelada: " + motivo
             );
         }
-        LimpiezaResponseDTO LResponse = new LimpiezaResponseDTO();
+
 
         LResponse.setIdLimpieza(guardarCancelacion.getIdLimpieza());
         LResponse.setEstadoLimpieza(guardarCancelacion.getEstadoLimpieza());
@@ -109,10 +132,7 @@ public class LimpiezaService {
     }
 
 //              Service (lógica interna):
-//
-//crearLimpieza(propiedadId, fecha) → guardar en BD
-//
-//cancelarLimpieza(id) → cambiar estado a CANCELADA
+
 //
 //obtenerUltimaLimpieza(propiedadId) → consultar cuándo fue la última limpieza
 //

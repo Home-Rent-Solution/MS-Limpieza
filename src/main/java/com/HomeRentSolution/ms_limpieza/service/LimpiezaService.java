@@ -102,33 +102,56 @@ public class LimpiezaService {
         };
     }
 
-    public LimpiezaResponseDTO cancelarLimpieza(Long idLimpieza, EstadoLimpieza estadoLimpieza, String observaciones ) {
+    private LimpiezaResponseDTO ejecutarCancelacion(
+            Long idLimpieza,
+            EstadoLimpieza estadoDestino,
+            String observaciones) {
 
         Limpieza limpieza = limpiezaRepository.findById(idLimpieza)
-                .orElseThrow(() -> new RuntimeException("Limpieza no encontrada"));
+                .orElseThrow(() -> new RuntimeException("Limpieza no encontrada con id: " + idLimpieza));
 
-        limpieza.setIdLimpieza(limpieza.getIdLimpieza());
-        limpieza.setEstadoLimpieza(EstadoLimpieza.CANCELADA_POR_SISTEMA);
-        limpieza.setMotivo(limpieza.getMotivo());
-
-        Limpieza guardarCancelacion = limpiezaRepository.save(limpieza);
-
-        LimpiezaResponseDTO LResponse = new LimpiezaResponseDTO();
-
-        if (reservaResponseDTO.getIdLimpieza() != null) {
-            limpiezaClient.cancelarLimpieza(
-                    reserva.getIdLimpieza(),
-                    EstadoLimpieza.CANCELADA_POR_SISTEMA,
-                    "Reserva cancelada: " + motivo
+        if (limpieza.getEstadoLimpieza() != EstadoLimpieza.PENDIENTE) {
+            throw new RuntimeException(
+                    "Solo se puede cancelar una limpieza en estado PENDIENTE. Estado actual: "
+                            + limpieza.getEstadoLimpieza()
             );
         }
 
+        limpieza.setEstadoLimpieza(estadoDestino);
+        limpieza.setMotivo(observaciones); // tu entidad usa "motivo", no "observaciones"
 
-        LResponse.setIdLimpieza(guardarCancelacion.getIdLimpieza());
-        LResponse.setEstadoLimpieza(guardarCancelacion.getEstadoLimpieza());
-        LResponse.setObservaciones(observaciones);
+        Limpieza guardada = limpiezaRepository.save(limpieza);
+        return toResponseDTO(guardada);
+    }
 
-        return LResponse;
+    // Llamado por ms-reservas automáticamente al cancelar una reserva
+    public LimpiezaResponseDTO cancelarPorSistema(Long idLimpieza, String observaciones) {
+        return ejecutarCancelacion(idLimpieza, EstadoLimpieza.CANCELADA_POR_SISTEMA, observaciones);
+    }
+
+    // Llamado por el personal de aseo directamente
+    public LimpiezaResponseDTO cancelarPorPersonal(Long idLimpieza, String observaciones) {
+        return ejecutarCancelacion(idLimpieza, EstadoLimpieza.CANCELADA_POR_PERSONAL, observaciones);
+    }
+
+    // Este es el que ya tenías — lo mantienes para cancelar-terreno del controller
+    public LimpiezaResponseDTO cancelarLimpieza(
+            Long idLimpieza,
+            EstadoLimpieza estadoLimpieza,
+            String observaciones) {
+        return ejecutarCancelacion(idLimpieza, estadoLimpieza, observaciones);
+    }
+
+    private LimpiezaResponseDTO toResponseDTO(Limpieza limpieza) {
+        LimpiezaResponseDTO dto = new LimpiezaResponseDTO();
+        dto.setIdLimpieza(limpieza.getIdLimpieza());
+        dto.setIdPropiedad(limpieza.getIdPropiedad());
+        dto.setIdReserva(limpieza.getIdReserva());
+        dto.setFechaProgramada(limpieza.getFechaProgramada());
+        dto.setFechaRealizada(limpieza.getFechaRealizada());
+        dto.setEstadoLimpieza(limpieza.getEstadoLimpieza());
+        dto.setObservaciones(limpieza.getMotivo()); // en entidad es "motivo", en DTO es "observaciones"
+        return dto;
     }
 
 //              Service (lógica interna):

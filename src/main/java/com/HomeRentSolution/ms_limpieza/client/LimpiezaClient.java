@@ -12,5 +12,10 @@ public interface LimpiezaClient {
     @GetMapping("/api/limpieza/{id}")
     String obtenerPorIdLimpieza(@PathVariable("id") Long idLimpieza);
 
+    @PutMapping("/limpieza/{id}/cancelar-por-sistema")
+    void cancelarPorSistema(
+            @PathVariable("id") Long idLimpieza,
+            @RequestBody String motivo  // recibe el String directo, sin DTO
+    );
 
 }

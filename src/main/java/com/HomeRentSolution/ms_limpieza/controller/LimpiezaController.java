@@ -1,6 +1,7 @@
 package com.HomeRentSolution.ms_limpieza.controller;
 
 import com.HomeRentSolution.ms_limpieza.dto.LimpiezaResponseDTO;
+import com.HomeRentSolution.ms_limpieza.dto.ReservaDTO;
 import com.HomeRentSolution.ms_limpieza.model.EstadoLimpieza;
 import com.HomeRentSolution.ms_limpieza.service.LimpiezaService;
 import lombok.RequiredArgsConstructor;
@@ -37,10 +38,28 @@ public class LimpiezaController {
 
 
     }
-    @PutMapping("/reserva/{idReserva}/cancelar")
-    public ResponseEntity<Void> cancelarLimpiezaPorReserva(@PathVariable Long idReserva) {
-        limpiezaService.cancelarPorIdReserva(idReserva);
-        return ResponseEntity.noContent().build();
+
+
+    @PutMapping("/{id}/cancelar-por-sistema")
+    public ResponseEntity<?> cancelarPorSistema(
+            @PathVariable Long id,
+            @RequestBody String observaciones) {  // ← String directo, no DTO
+        try {
+            return ResponseEntity.ok(limpiezaService.cancelarPorSistema(id, observaciones));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/cancelar-por-personal")
+    public ResponseEntity<?> cancelarPorPersonal(
+            @PathVariable Long id,
+            @RequestBody ReservaDTO request) {
+        try {
+            return ResponseEntity.ok(limpiezaService.cancelarPorPersonal(id, request.get));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
 

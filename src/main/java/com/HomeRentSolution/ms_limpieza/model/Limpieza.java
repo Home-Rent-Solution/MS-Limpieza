@@ -25,7 +25,7 @@ public class Limpieza {
     @Column(nullable = false)
     private LocalDateTime fechaProgramada;  // cuando se agenda (fin de reserva)
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private LocalDateTime fechaRealizada;   // cuando se completó
 
     @Enumerated(EnumType.STRING)

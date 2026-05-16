@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 public interface LimpiezaClient {
 
     @GetMapping("/api/limpieza/{id}")
-    String obtenerPorId(@PathVariable("id") Long idLimpieza);
+    String obtenerPorIdLimpieza(@PathVariable("id") Long idLimpieza);
 
 
 }

@@ -32,5 +32,5 @@ public class Limpieza {
     private EstadoLimpieza estadoLimpieza;
 
     @Column(nullable = false)
-    private String observaciones;
+    private String motivo;
 }

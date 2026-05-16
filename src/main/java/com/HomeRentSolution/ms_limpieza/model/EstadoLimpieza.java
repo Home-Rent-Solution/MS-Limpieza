@@ -4,5 +4,6 @@ public enum EstadoLimpieza {
     PENDIENTE,
     EN_PROCESO,
     COMPLETADA,
-    CANCELADA
+    CANCELADA_POR_SISTEMA,
+    CANCELADA_POR_PERSONAL
 }

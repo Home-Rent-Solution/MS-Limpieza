@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface LimpiezaRepository extends JpaRepository<Limpieza, Long> {
 
-    List<Limpieza> findBybuscarPorId(Long idLimpieza);
+
     List<Limpieza> findByEstadoLimpieza(EstadoLimpieza estadoLimpieza);
 
 }

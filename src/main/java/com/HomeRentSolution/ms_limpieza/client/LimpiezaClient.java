@@ -15,7 +15,7 @@ public interface LimpiezaClient {
     @PutMapping("/limpieza/{id}/cancelar-por-sistema")
     void cancelarPorSistema(
             @PathVariable("id") Long idLimpieza,
-            @RequestBody String motivo  // recibe el String directo, sin DTO
+            @RequestBody String motivo
     );
 
 }

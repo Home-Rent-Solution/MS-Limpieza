@@ -14,5 +14,6 @@ public class ReservaDTO {
     private LocalDateTime fechaVencimiento;
     private LocalDateTime fechaFin;
     private String estadoReserva;
+    private String motivo;
 
 }

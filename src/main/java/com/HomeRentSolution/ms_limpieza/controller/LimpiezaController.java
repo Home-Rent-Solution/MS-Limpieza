@@ -3,6 +3,7 @@ package com.HomeRentSolution.ms_limpieza.controller;
 import com.HomeRentSolution.ms_limpieza.dto.LimpiezaResponseDTO;
 import com.HomeRentSolution.ms_limpieza.dto.ReservaDTO;
 import com.HomeRentSolution.ms_limpieza.model.EstadoLimpieza;
+import com.HomeRentSolution.ms_limpieza.model.Limpieza;
 import com.HomeRentSolution.ms_limpieza.service.LimpiezaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,7 @@ public class LimpiezaController {
 
         LimpiezaResponseDTO busXId = limpiezaService.buscarPorId(id);
 
-        return ResponseEntity.ok(busXId );
+        return ResponseEntity.ok(busXId);
     }
 
     @GetMapping
@@ -32,13 +33,15 @@ public class LimpiezaController {
     }
 
     @GetMapping("/estado/{estado}")
-    public List<LimpiezaResponseDTO> buscarPorEstado(@PathVariable EstadoLimpieza estado){
+    public List<LimpiezaResponseDTO> buscarPorEstado(@PathVariable("estado") String estado) {
+        EstadoLimpieza estadoEnum = EstadoLimpieza.valueOf(estado.toUpperCase());
+        List<Limpieza> limpiezas = limpiezaService.buscarPorEstado(estadoEnum);
 
-        return limpiezaService.cambiarEstado(EstadoLimpieza.valueOf(estado));
-
-
+        // Cambiamos "this" por "limpiezaService"
+        return limpiezas.stream()
+                .map(limpiezaService::toResponseDTO)
+                .toList();
     }
-
 
     @PutMapping("/{id}/cancelar-por-sistema")
     public ResponseEntity<?> cancelarPorSistema(
@@ -56,7 +59,7 @@ public class LimpiezaController {
             @PathVariable Long id,
             @RequestBody ReservaDTO request) {
         try {
-            return ResponseEntity.ok(limpiezaService.cancelarPorPersonal(id, request.get));
+            return ResponseEntity.ok(limpiezaService.cancelarPorPersonal(id, request.getMotivo()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -89,15 +92,4 @@ public class LimpiezaController {
         );
         return ResponseEntity.ok(response);
     }
-    //             Posibles métodos mínimos para Limpieza
-//Controller (endpoints que Reservas va a llamar):
-//
-//POST /api/limpiezas → crear una limpieza programada (Reservas manda fecha y propiedad)
-//
-//DELETE /api/limpiezas/{id} → cancelar limpieza programada
-//
-//GET /api/limpiezas/propiedad/{propiedadId}/estado → saber si la propiedad está limpia o no
-//
-//PATCH /api/limpiezas/{id}/estado → actualizar estado (cuando el equipo de limpieza reporta)
-//
 }

@@ -142,7 +142,7 @@ public class LimpiezaService {
         return ejecutarCancelacion(idLimpieza, estadoLimpieza, observaciones);
     }
 
-    private LimpiezaResponseDTO toResponseDTO(Limpieza limpieza) {
+    public LimpiezaResponseDTO toResponseDTO(Limpieza limpieza) {
         LimpiezaResponseDTO dto = new LimpiezaResponseDTO();
         dto.setIdLimpieza(limpieza.getIdLimpieza());
         dto.setIdPropiedad(limpieza.getIdPropiedad());
@@ -154,12 +154,7 @@ public class LimpiezaService {
         return dto;
     }
 
-//              Service (lógica interna):
 
-//
-//obtenerUltimaLimpieza(propiedadId) → consultar cuándo fue la última limpieza
-//
-//actualizarEstado(id, nuevoEstado) → cambiar estado
 
 
 

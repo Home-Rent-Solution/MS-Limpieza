@@ -15,8 +15,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v2/limpiezas")
 @RequiredArgsConstructor
-@Tag(name = "Limpiezas V2 (HATEOAS)", description = "Endpoints de limpieza con auto-navegación por enlaces")
+@Tag(name = "Limpiezas V2 (HATEOAS)",
+        description = "Endpoints de limpieza con auto-navegación por enlaces")
 public class LimpiezaV2Controller {
+
 
     private final LimpiezaService limpiezaService;
     private final LimpiezaAssembler assembler;
@@ -32,4 +34,5 @@ public class LimpiezaV2Controller {
         List<Limpieza> entidades = limpiezaService.obtenerTodas();
         return ResponseEntity.ok(assembler.toCollectionModel(entidades));
     }
+
 }

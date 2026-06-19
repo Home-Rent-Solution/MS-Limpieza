@@ -1,5 +1,5 @@
 package com.HomeRentSolution.ms_limpieza.controller;
-import com.HomeRentSolution.ms_limpieza.assemblers.LimpiezaAssembler; // En tu caso inyectas LimpiezaAssembler si es necesario
+
 import com.HomeRentSolution.ms_limpieza.dto.LimpiezaResponseDTO;
 import com.HomeRentSolution.ms_limpieza.dto.ReservaDTO;
 import com.HomeRentSolution.ms_limpieza.model.EstadoLimpieza;
@@ -12,13 +12,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/limpiezas")
 @RequiredArgsConstructor
 @Tag(name = "Limpiezas V1", description = "API estándar para la gestión operativa del aseo")
 public class LimpiezaController {
+
 
 
     private final LimpiezaService limpiezaService;
@@ -36,19 +36,20 @@ public class LimpiezaController {
     }
 
     @GetMapping("/estado/{estado}")
-    public ResponseEntity<List<LimpiezaResponseDTO>> obtenerPorEstado(@PathVariable EstadoLimpieza estado) {
+    public ResponseEntity<List<LimpiezaResponseDTO>> obtenerPorEstado(
+            @PathVariable EstadoLimpieza estado) {
         List<Limpieza> limpiezas = limpiezaService.obtenerPorEstado(estado);
         List<LimpiezaResponseDTO> dtos = limpiezas.stream().map(this::toResponseDTO).toList();
         return ResponseEntity.ok(dtos);
     }
 
     @PutMapping("/{id}/estado")
-    public ResponseEntity<LimpiezaResponseDTO> actualizarEstado(@PathVariable Long id, @RequestParam EstadoLimpieza nuevoEstado) {
+    public ResponseEntity<LimpiezaResponseDTO> actualizarEstado(
+            @PathVariable Long id, @RequestParam EstadoLimpieza nuevoEstado) {
         Limpieza entidadActualizada = limpiezaService.cambiarEstado(id, nuevoEstado);
         return ResponseEntity.ok(toResponseDTO(entidadActualizada));
     }
 
-    // Mapper local privado para aislar V1 de HATEOAS
     private LimpiezaResponseDTO toResponseDTO(Limpieza limpieza) {
         LimpiezaResponseDTO dto = new LimpiezaResponseDTO();
         dto.setIdLimpieza(limpieza.getIdLimpieza());
@@ -60,4 +61,5 @@ public class LimpiezaController {
         dto.setObservaciones(limpieza.getMotivo());
         return dto;
     }
+
 }

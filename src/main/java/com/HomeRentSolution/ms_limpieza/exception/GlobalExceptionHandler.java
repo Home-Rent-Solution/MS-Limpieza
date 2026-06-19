@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @RestControllerAdvice
 @Slf4j
-public class GobalExceptionHandler {
+public class GlobalExceptionHandler {
 
     @ExceptionHandler(LimpiezaNoEncontradaException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(LimpiezaNoEncontradaException ex) {

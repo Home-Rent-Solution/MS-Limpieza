@@ -1,7 +1,9 @@
 package com.HomeRentSolution.ms_limpieza.config;
 
 import feign.Request;
-import org.springframework.a
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

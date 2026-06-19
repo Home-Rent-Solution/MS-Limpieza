@@ -1,162 +1,114 @@
 package com.HomeRentSolution.ms_limpieza.service;
 
+import com.HomeRentSolution.ms_limpieza.config.AppConfig;
 import com.HomeRentSolution.ms_limpieza.dto.LimpiezaResponseDTO;
 import com.HomeRentSolution.ms_limpieza.dto.ReservaDTO;
+import com.HomeRentSolution.ms_limpieza.exception.LimpiezaNoEncontradaException;
 import com.HomeRentSolution.ms_limpieza.model.EstadoLimpieza;
 import com.HomeRentSolution.ms_limpieza.model.Limpieza;
 import com.HomeRentSolution.ms_limpieza.repository.LimpiezaRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class LimpiezaService {
 
     private final LimpiezaRepository limpiezaRepository;
+    private final RabbitTemplate rabbitTemplate;
 
-    public LimpiezaResponseDTO buscarPorId(Long id) {
-
-        Limpieza limpieza = limpiezaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
-
-        LimpiezaResponseDTO dto = new LimpiezaResponseDTO();
-        dto.setIdLimpieza(limpieza.getIdLimpieza());
-
-
-        return dto;
+    @Transactional(readOnly = true)
+    public Limpieza obtenerEntidadPorId(Long id) {
+        return limpiezaRepository.findById(id)
+                .orElseThrow(() -> new LimpiezaNoEncontradaException(id));
     }
 
-
-    public List<Limpieza> buscarPorEstado(EstadoLimpieza estadoLimpieza) {
+    @Transactional(readOnly = true)
+    public List<Limpieza> obtenerPorEstado(EstadoLimpieza estadoLimpieza) {
         return limpiezaRepository.findByEstadoLimpieza(estadoLimpieza);
     }
 
+    @Transactional(readOnly = true)
+    public List<Limpieza> obtenerTodas() {
+        return limpiezaRepository.findAll();
+    }
 
-    public List<LimpiezaResponseDTO> buscarTodas() { return limpiezaRepository.findAll()
-            .stream()
-            .map(limpieza -> {
-                LimpiezaResponseDTO dto = new LimpiezaResponseDTO();
-                dto.setIdLimpieza(limpieza.getIdLimpieza());
-
-                return dto;
-            })
-            .toList(); }
-
-
+    @Transactional
     public LimpiezaResponseDTO agendarLimpieza(ReservaDTO request) {
         Limpieza nuevaLimpieza = new Limpieza();
-
         nuevaLimpieza.setIdReserva(request.getIdReserva());
         nuevaLimpieza.setIdPropiedad(request.getIdPropiedad());
-        nuevaLimpieza.setFechaProgramada(request.getFechaFin());
+        nuevaLimpieza.setFechaProgramada(request.getFechaVencimiento()); // Usando los nombres de tu ReservaDTO estándar
         nuevaLimpieza.setEstadoLimpieza(EstadoLimpieza.PENDIENTE);
 
         Limpieza entidadGuardada = limpiezaRepository.save(nuevaLimpieza);
+        log.info("Limpieza agendada con éxito para la propiedad ID: {}", request.getIdPropiedad());
 
+        // Respuesta rápida de confirmación como hace MS-Pagos
         LimpiezaResponseDTO response = new LimpiezaResponseDTO();
         response.setIdLimpieza(entidadGuardada.getIdLimpieza());
-        response.setIdReserva(entidadGuardada.getIdReserva());
-        response.setIdPropiedad(entidadGuardada.getIdPropiedad());
         response.setEstadoLimpieza(entidadGuardada.getEstadoLimpieza());
-        response.setFechaProgramada(entidadGuardada.getFechaProgramada());
-
         return response;
-
     }
 
-    public LimpiezaResponseDTO cambiarEstado(Long idLimpieza, EstadoLimpieza nuevoEstado) {
+    @Transactional
+    public Limpieza cambiarEstado(Long idLimpieza, EstadoLimpieza nuevoEstado) {
         Limpieza limpieza = limpiezaRepository.findById(idLimpieza)
-                .orElseThrow(() -> new RuntimeException("Limpieza no encontrada"));
+                .orElseThrow(() -> new LimpiezaNoEncontradaException(idLimpieza));
 
-        // Validar transiciones permitidas
         if (!transicionPermitida(limpieza.getEstadoLimpieza(), nuevoEstado)) {
-            throw new RuntimeException("No se puede pasar de " + limpieza.getEstadoLimpieza() + " a " + nuevoEstado);
+            throw new IllegalArgumentException("Transición inválida: No se puede pasar de " + limpieza.getEstadoLimpieza() + " a " + nuevoEstado);
         }
 
         limpieza.setEstadoLimpieza(nuevoEstado);
-        limpiezaRepository.save(limpieza);
+        Limpieza guardada = limpiezaRepository.save(limpieza);
 
-        LimpiezaResponseDTO dto = new LimpiezaResponseDTO();
-        dto.setIdLimpieza(limpieza.getIdLimpieza());
+        // Publicar evento en RabbitMQ para notificar a otros servicios del cambio de estado
+        rabbitTemplate.convertAndSend(AppConfig.LIMPIEZAS_EXCHANGE, AppConfig.ROUTING_ESTADO_CAMBIADO, guardada);
+        log.info("[RabbitMQ] Evento enviado. Limpieza ID {} cambió a {}", idLimpieza, nuevoEstado);
 
-
-        return dto;
-
-
+        return guardada;
     }
 
     private boolean transicionPermitida(EstadoLimpieza actual, EstadoLimpieza nuevo) {
-        // Reglas de negocio
         return switch (actual) {
             case PENDIENTE -> nuevo == EstadoLimpieza.EN_PROCESO ||
                     nuevo == EstadoLimpieza.CANCELADA_POR_SISTEMA ||
                     nuevo == EstadoLimpieza.CANCELADA_POR_PERSONAL;
-
             case EN_PROCESO -> nuevo == EstadoLimpieza.COMPLETADA ||
                     nuevo == EstadoLimpieza.CANCELADA_POR_PERSONAL;
-
-            default -> false;  // COMPLETADA o CANCELADA no pueden cambiar
+            default -> false;
         };
     }
 
-    private LimpiezaResponseDTO ejecutarCancelacion(
-            Long idLimpieza,
-            EstadoLimpieza estadoDestino,
-            String observaciones) {
-
+    private Limpieza ejecutarCancelacion(Long idLimpieza, EstadoLimpieza estadoDestino, String observaciones) {
         Limpieza limpieza = limpiezaRepository.findById(idLimpieza)
-                .orElseThrow(() -> new RuntimeException("Limpieza no encontrada con id: " + idLimpieza));
+                .orElseThrow(() -> new LimpiezaNoEncontradaException(idLimpieza));
 
         if (limpieza.getEstadoLimpieza() != EstadoLimpieza.PENDIENTE) {
-            throw new RuntimeException(
-                    "Solo se puede cancelar una limpieza en estado PENDIENTE. Estado actual: "
-                            + limpieza.getEstadoLimpieza()
-            );
+            throw new IllegalArgumentException("Solo se puede cancelar una limpieza en estado PENDIENTE. Estado actual: " + limpieza.getEstadoLimpieza());
         }
 
         limpieza.setEstadoLimpieza(estadoDestino);
-        limpieza.setMotivo(observaciones); // tu entidad usa "motivo", no "observaciones"
+        limpieza.setMotivo(observaciones);
 
-        Limpieza guardada = limpiezaRepository.save(limpieza);
-        return toResponseDTO(guardada);
+        return limpiezaRepository.save(limpieza);
     }
 
-    // Llamado por ms-reservas automáticamente al cancelar una reserva
-    public LimpiezaResponseDTO cancelarPorSistema(Long idLimpieza, String observaciones) {
+    @Transactional
+    public Limpieza cancelarPorSistema(Long idLimpieza, String observaciones) {
         return ejecutarCancelacion(idLimpieza, EstadoLimpieza.CANCELADA_POR_SISTEMA, observaciones);
     }
 
-    // Llamado por el personal de aseo directamente
-    public LimpiezaResponseDTO cancelarPorPersonal(Long idLimpieza, String observaciones) {
+    @Transactional
+    public Limpieza cancelarPorPersonal(Long idLimpieza, String observaciones) {
         return ejecutarCancelacion(idLimpieza, EstadoLimpieza.CANCELADA_POR_PERSONAL, observaciones);
     }
-
-    // Este es el que ya tenías — lo mantienes para cancelar-terreno del controller
-    public LimpiezaResponseDTO cancelarLimpieza(
-            Long idLimpieza,
-            EstadoLimpieza estadoLimpieza,
-            String observaciones) {
-        return ejecutarCancelacion(idLimpieza, estadoLimpieza, observaciones);
-    }
-
-    public LimpiezaResponseDTO toResponseDTO(Limpieza limpieza) {
-        LimpiezaResponseDTO dto = new LimpiezaResponseDTO();
-        dto.setIdLimpieza(limpieza.getIdLimpieza());
-        dto.setIdPropiedad(limpieza.getIdPropiedad());
-        dto.setIdReserva(limpieza.getIdReserva());
-        dto.setFechaProgramada(limpieza.getFechaProgramada());
-        dto.setFechaRealizada(limpieza.getFechaRealizada());
-        dto.setEstadoLimpieza(limpieza.getEstadoLimpieza());
-        dto.setObservaciones(limpieza.getMotivo()); // en entidad es "motivo", en DTO es "observaciones"
-        return dto;
-    }
-
-
-
-
-
 }
 

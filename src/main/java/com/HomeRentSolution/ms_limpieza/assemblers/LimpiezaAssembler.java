@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @Component
-public class LimpiezaAssembler {
+public class LimpiezaAssembler extends RepresentationModelAssemblerSupport<Limpieza, LimpiezaResponseDTO> {
 
     public LimpiezaAssembler() {
         super(LimpiezaV2Controller.class, LimpiezaResponseDTO.class);
@@ -26,8 +26,9 @@ public class LimpiezaAssembler {
         dto.setEstadoLimpieza(entidad.getEstadoLimpieza());
         dto.setObservaciones(entidad.getMotivo());
 
-        // Inyección del enlace autodescriptivo de HATEOAS (Self Link)
-        dto.add(linkTo(methodOn(LimpiezaV2Controller.class).obtenerPorId(entidad.getIdLimpieza())).withSelfRel());
+        dto.add(linkTo(methodOn(LimpiezaV2Controller.class)
+                .obtenerPorId(entidad.getIdLimpieza())).withSelfRel());
         return dto;
     }
+
 }

@@ -3,13 +3,11 @@ package com.HomeRentSolution.ms_limpieza.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
-
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Entity
 @Data
+@Table(name = "limpiezas")
 public class Limpieza {
 
     @Id
@@ -23,14 +21,14 @@ public class Limpieza {
     private Long idReserva;
 
     @Column(nullable = false)
-    private LocalDateTime fechaProgramada;  // cuando se agenda (fin de reserva)
+    private LocalDateTime fechaProgramada;
 
     @Column(nullable = true)
-    private LocalDateTime fechaRealizada;   // cuando se completó
+    private LocalDateTime fechaRealizada;
 
     @Enumerated(EnumType.STRING)
     private EstadoLimpieza estadoLimpieza;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String motivo;
 }

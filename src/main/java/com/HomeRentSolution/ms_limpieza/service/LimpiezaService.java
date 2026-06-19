@@ -44,13 +44,12 @@ public class LimpiezaService {
         Limpieza nuevaLimpieza = new Limpieza();
         nuevaLimpieza.setIdReserva(request.getIdReserva());
         nuevaLimpieza.setIdPropiedad(request.getIdPropiedad());
-        nuevaLimpieza.setFechaProgramada(request.getFechaVencimiento()); // Usando los nombres de tu ReservaDTO estándar
+        nuevaLimpieza.setFechaProgramada(request.getFechaVencimiento());
         nuevaLimpieza.setEstadoLimpieza(EstadoLimpieza.PENDIENTE);
 
         Limpieza entidadGuardada = limpiezaRepository.save(nuevaLimpieza);
-        log.info("Limpieza agendada con éxito para la propiedad ID: {}", request.getIdPropiedad());
+        log.info("Limpieza agendada para propiedad ID: {}", request.getIdPropiedad());
 
-        // Respuesta rápida de confirmación como hace MS-Pagos
         LimpiezaResponseDTO response = new LimpiezaResponseDTO();
         response.setIdLimpieza(entidadGuardada.getIdLimpieza());
         response.setEstadoLimpieza(entidadGuardada.getEstadoLimpieza());
@@ -63,52 +62,58 @@ public class LimpiezaService {
                 .orElseThrow(() -> new LimpiezaNoEncontradaException(idLimpieza));
 
         if (!transicionPermitida(limpieza.getEstadoLimpieza(), nuevoEstado)) {
-            throw new IllegalArgumentException("Transición inválida: No se puede pasar de " + limpieza.getEstadoLimpieza() + " a " + nuevoEstado);
+            throw new IllegalArgumentException("Transición inválida: No se puede pasar de "
+                    + limpieza.getEstadoLimpieza() + " a " + nuevoEstado);
         }
 
         limpieza.setEstadoLimpieza(nuevoEstado);
         Limpieza guardada = limpiezaRepository.save(limpieza);
 
-        // Publicar evento en RabbitMQ para notificar a otros servicios del cambio de estado
-        rabbitTemplate.convertAndSend(AppConfig.LIMPIEZAS_EXCHANGE, AppConfig.ROUTING_ESTADO_CAMBIADO, guardada);
-        log.info("[RabbitMQ] Evento enviado. Limpieza ID {} cambió a {}", idLimpieza, nuevoEstado);
-
+        rabbitTemplate.convertAndSend(AppConfig.LIMPIEZAS_EXCHANGE,
+                AppConfig.ROUTING_ESTADO_CAMBIADO, guardada);
+        log.info("[RabbitMQ] Evento enviado. Limpieza ID {} cambió a {}",
+                idLimpieza, nuevoEstado);
         return guardada;
     }
 
     private boolean transicionPermitida(EstadoLimpieza actual, EstadoLimpieza nuevo) {
         return switch (actual) {
-            case PENDIENTE -> nuevo == EstadoLimpieza.EN_PROCESO ||
-                    nuevo == EstadoLimpieza.CANCELADA_POR_SISTEMA ||
-                    nuevo == EstadoLimpieza.CANCELADA_POR_PERSONAL;
-            case EN_PROCESO -> nuevo == EstadoLimpieza.COMPLETADA ||
-                    nuevo == EstadoLimpieza.CANCELADA_POR_PERSONAL;
+            case PENDIENTE -> nuevo == EstadoLimpieza.EN_PROCESO
+                    || nuevo == EstadoLimpieza.CANCELADA_POR_SISTEMA
+                    || nuevo == EstadoLimpieza.CANCELADA_POR_PERSONAL;
+            case EN_PROCESO -> nuevo == EstadoLimpieza.COMPLETADA
+                    || nuevo == EstadoLimpieza.CANCELADA_POR_PERSONAL;
             default -> false;
         };
     }
 
-    private Limpieza ejecutarCancelacion(Long idLimpieza, EstadoLimpieza estadoDestino, String observaciones) {
+    private Limpieza ejecutarCancelacion(Long idLimpieza,
+                                         EstadoLimpieza estadoDestino,
+                                         String observaciones) {
         Limpieza limpieza = limpiezaRepository.findById(idLimpieza)
                 .orElseThrow(() -> new LimpiezaNoEncontradaException(idLimpieza));
 
         if (limpieza.getEstadoLimpieza() != EstadoLimpieza.PENDIENTE) {
-            throw new IllegalArgumentException("Solo se puede cancelar una limpieza en estado PENDIENTE. Estado actual: " + limpieza.getEstadoLimpieza());
+            throw new IllegalArgumentException(
+                    "Solo se puede cancelar una limpieza en estado PENDIENTE. Estado actual: "
+                            + limpieza.getEstadoLimpieza());
         }
-
         limpieza.setEstadoLimpieza(estadoDestino);
         limpieza.setMotivo(observaciones);
-
         return limpiezaRepository.save(limpieza);
     }
 
     @Transactional
     public Limpieza cancelarPorSistema(Long idLimpieza, String observaciones) {
-        return ejecutarCancelacion(idLimpieza, EstadoLimpieza.CANCELADA_POR_SISTEMA, observaciones);
+        return ejecutarCancelacion(idLimpieza,
+                EstadoLimpieza.CANCELADA_POR_SISTEMA, observaciones);
     }
 
     @Transactional
     public Limpieza cancelarPorPersonal(Long idLimpieza, String observaciones) {
-        return ejecutarCancelacion(idLimpieza, EstadoLimpieza.CANCELADA_POR_PERSONAL, observaciones);
+        return ejecutarCancelacion(idLimpieza,
+                EstadoLimpieza.CANCELADA_POR_PERSONAL, observaciones);
     }
+
 }
 

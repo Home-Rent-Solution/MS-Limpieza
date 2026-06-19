@@ -1,0 +1,30 @@
+# Base de datos del microservicio de limpieza
+db-limpieza:
+  image: mysql:8.0
+  container_name: db-limpieza
+  environment:
+    MYSQL_DATABASE: db_limpieza
+    MYSQL_ROOT_PASSWORD: root
+  ports:
+    - "3308:3306" # Puerto 3308 mapeado para evitar colisiones con el 3307 de pagos
+  networks:
+    - homerent-net
+
+# Microservicio de Limpieza
+ms-limpieza:
+  build: ./ms-limpieza
+  container_name: ms-limpieza
+  ports:
+    - "8086:8086" # Puerto operativo asignado para ms-limpieza
+  environment:
+    SPRING_DATASOURCE_URL: jdbc:mysql://db-limpieza:3306/db_limpieza
+    SPRING_DATASOURCE_USERNAME: root
+    SPRING_DATASOURCE_PASSWORD: root
+    SPRING_RABBITMQ_HOST: rabbitmq
+    EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://ms-eureka:8761/eureka/
+  depends_on:
+    - db-limpieza
+    - rabbitmq
+    - ms-eureka
+  networks:
+    - homerent-net

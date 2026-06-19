@@ -1,95 +1,63 @@
 package com.HomeRentSolution.ms_limpieza.controller;
-
+import com.HomeRentSolution.ms_limpieza.assemblers.LimpiezaAssembler; // En tu caso inyectas LimpiezaAssembler si es necesario
 import com.HomeRentSolution.ms_limpieza.dto.LimpiezaResponseDTO;
 import com.HomeRentSolution.ms_limpieza.dto.ReservaDTO;
 import com.HomeRentSolution.ms_limpieza.model.EstadoLimpieza;
 import com.HomeRentSolution.ms_limpieza.model.Limpieza;
 import com.HomeRentSolution.ms_limpieza.service.LimpiezaService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/limpieza")
+@RequestMapping("/api/v1/limpiezas")
 @RequiredArgsConstructor
+@Tag(name = "Limpiezas V1", description = "API estándar para la gestión operativa del aseo")
 public class LimpiezaController {
 
 
     private final LimpiezaService limpiezaService;
 
-    @GetMapping("/{id}")
-    public ResponseEntity<LimpiezaResponseDTO> obtenerPorId(@PathVariable Long id) {
-
-        LimpiezaResponseDTO busXId = limpiezaService.buscarPorId(id);
-
-        return ResponseEntity.ok(busXId);
+    @PostMapping
+    public ResponseEntity<LimpiezaResponseDTO> crearLimpieza(@RequestBody ReservaDTO reservaDTO) {
+        LimpiezaResponseDTO response = limpiezaService.agendarLimpieza(reservaDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping
-    public List<LimpiezaResponseDTO> obtenerTodas() {
-        return limpiezaService.buscarTodas();
+    @GetMapping("/{id}")
+    public ResponseEntity<LimpiezaResponseDTO> obtenerPorId(@PathVariable Long id) {
+        Limpieza entidad = limpiezaService.obtenerEntidadPorId(id);
+        return ResponseEntity.ok(toResponseDTO(entidad));
     }
 
     @GetMapping("/estado/{estado}")
-    public List<LimpiezaResponseDTO> buscarPorEstado(@PathVariable("estado") String estado) {
-        EstadoLimpieza estadoEnum = EstadoLimpieza.valueOf(estado.toUpperCase());
-        List<Limpieza> limpiezas = limpiezaService.buscarPorEstado(estadoEnum);
-
-        // Cambiamos "this" por "limpiezaService"
-        return limpiezas.stream()
-                .map(limpiezaService::toResponseDTO)
-                .toList();
+    public ResponseEntity<List<LimpiezaResponseDTO>> obtenerPorEstado(@PathVariable EstadoLimpieza estado) {
+        List<Limpieza> limpiezas = limpiezaService.obtenerPorEstado(estado);
+        List<LimpiezaResponseDTO> dtos = limpiezas.stream().map(this::toResponseDTO).toList();
+        return ResponseEntity.ok(dtos);
     }
 
-    @PutMapping("/{id}/cancelar-por-sistema")
-    public ResponseEntity<?> cancelarPorSistema(
-            @PathVariable Long id,
-            @RequestBody String observaciones) {  // ← String directo, no DTO
-        try {
-            return ResponseEntity.ok(limpiezaService.cancelarPorSistema(id, observaciones));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<LimpiezaResponseDTO> actualizarEstado(@PathVariable Long id, @RequestParam EstadoLimpieza nuevoEstado) {
+        Limpieza entidadActualizada = limpiezaService.cambiarEstado(id, nuevoEstado);
+        return ResponseEntity.ok(toResponseDTO(entidadActualizada));
     }
 
-    @PutMapping("/{id}/cancelar-por-personal")
-    public ResponseEntity<?> cancelarPorPersonal(
-            @PathVariable Long id,
-            @RequestBody ReservaDTO request) {
-        try {
-            return ResponseEntity.ok(limpiezaService.cancelarPorPersonal(id, request.getMotivo()));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-
-    // 1. Personal inicia limpieza
-    @PatchMapping("/{idLimpieza}/iniciar")
-    public ResponseEntity<LimpiezaResponseDTO> iniciarLimpieza(@PathVariable Long idLimpieza) {
-        LimpiezaResponseDTO response = limpiezaService.cambiarEstado(idLimpieza, EstadoLimpieza.EN_PROCESO);
-        return ResponseEntity.ok(response);
-    }
-
-    // 2. Personal completa limpieza
-    @PatchMapping("/{idLimpieza}/completar")
-    public ResponseEntity<LimpiezaResponseDTO> completarLimpieza(@PathVariable Long idLimpieza) {
-        LimpiezaResponseDTO response = limpiezaService.cambiarEstado(idLimpieza, EstadoLimpieza.COMPLETADA);
-        return ResponseEntity.ok(response);
-    }
-
-    // 3. Personal cancela por problema en terreno
-    @PostMapping("/{idLimpieza}/cancelar-terreno")
-    public ResponseEntity<LimpiezaResponseDTO> cancelarPorTerreno(
-            @PathVariable Long idLimpieza,
-            @RequestBody String observaciones) {
-        LimpiezaResponseDTO response = limpiezaService.cancelarLimpieza(
-                idLimpieza,
-                EstadoLimpieza.CANCELADA_POR_PERSONAL,
-                observaciones
-        );
-        return ResponseEntity.ok(response);
+    // Mapper local privado para aislar V1 de HATEOAS
+    private LimpiezaResponseDTO toResponseDTO(Limpieza limpieza) {
+        LimpiezaResponseDTO dto = new LimpiezaResponseDTO();
+        dto.setIdLimpieza(limpieza.getIdLimpieza());
+        dto.setIdPropiedad(limpieza.getIdPropiedad());
+        dto.setIdReserva(limpieza.getIdReserva());
+        dto.setFechaProgramada(limpieza.getFechaProgramada());
+        dto.setFechaRealizada(limpieza.getFechaRealizada());
+        dto.setEstadoLimpieza(limpieza.getEstadoLimpieza());
+        dto.setObservaciones(limpieza.getMotivo());
+        return dto;
     }
 }

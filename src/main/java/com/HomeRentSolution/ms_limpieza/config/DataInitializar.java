@@ -23,10 +23,11 @@ public class DataInitializar implements CommandLineRunner {
             lmp.setIdReserva(1L);
             lmp.setIdPropiedad(1L);
             lmp.setEstadoLimpieza(EstadoLimpieza.PENDIENTE);
-            lmp.setFechaProgramada(null);
-            lmp.setFechaRealizada(LocalDateTime.now().plusDays(3));
-
+            lmp.setFechaProgramada(LocalDateTime.now().plusDays(3));
+            lmp.setFechaRealizada(null);
+            lmp.setMotivo("Inicialización de datos del sistema");
             limpiezaRepository.save(lmp);
         }
     }
+
 }

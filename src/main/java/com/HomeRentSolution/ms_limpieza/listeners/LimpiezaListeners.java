@@ -1,7 +1,6 @@
 package com.HomeRentSolution.ms_limpieza.listeners;
 
 import com.HomeRentSolution.ms_limpieza.dto.ReservaDTO;
-import com.HomeRentSolution.ms_limpieza.model.Limpieza;
 import com.HomeRentSolution.ms_limpieza.repository.LimpiezaRepository;
 import com.HomeRentSolution.ms_limpieza.service.LimpiezaService;
 import lombok.RequiredArgsConstructor;
@@ -36,5 +35,4 @@ public class LimpiezaListeners {
             );
         });
     }
-
 }

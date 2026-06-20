@@ -15,5 +15,4 @@ public class SwaggerConfig {
                 .version("1.0")
                 .description("Documentación de la API para el control de estados de limpieza de propiedades"));
     }
-
 }

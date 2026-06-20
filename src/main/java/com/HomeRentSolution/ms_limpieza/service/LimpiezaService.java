@@ -114,6 +114,5 @@ public class LimpiezaService {
         return ejecutarCancelacion(idLimpieza,
                 EstadoLimpieza.CANCELADA_POR_PERSONAL, observaciones);
     }
-
 }
 

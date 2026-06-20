@@ -30,5 +30,4 @@ public class LimpiezaAssembler extends RepresentationModelAssemblerSupport<Limpi
                 .obtenerPorId(entidad.getIdLimpieza())).withSelfRel());
         return dto;
     }
-
 }

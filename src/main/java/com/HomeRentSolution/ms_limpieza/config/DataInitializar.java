@@ -1,6 +1,5 @@
 package com.HomeRentSolution.ms_limpieza.config;
 
-
 import com.HomeRentSolution.ms_limpieza.model.EstadoLimpieza;
 import com.HomeRentSolution.ms_limpieza.model.Limpieza;
 import com.HomeRentSolution.ms_limpieza.repository.LimpiezaRepository;
@@ -29,5 +28,4 @@ public class DataInitializar implements CommandLineRunner {
             limpiezaRepository.save(lmp);
         }
     }
-
 }

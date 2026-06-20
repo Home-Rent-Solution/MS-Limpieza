@@ -34,5 +34,4 @@ public class LimpiezaV2Controller {
         List<Limpieza> entidades = limpiezaService.obtenerTodas();
         return ResponseEntity.ok(assembler.toCollectionModel(entidades));
     }
-
 }

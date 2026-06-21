@@ -23,20 +23,30 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/limpiezas")
 @RequiredArgsConstructor
-@Tag(name = "Limpiezas V1", description = "API estándar para la gestión operativa del aseo")
+@Tag(name = "Limpiezas V1", description = "API estÃ¡ndar para la gestiÃ³n operativa del aseo")
 public class LimpiezaController {
 
 
 
     private final LimpiezaService limpiezaService;
 
-    @PostMapping
+    
+    @GetMapping
+    @Operation(summary = "Listar todas las limpiezas", description = "Retorna el listado completo de limpiezas registradas.")
+    @ApiResponse(responseCode = "200", description = "Listado de limpiezas",
+            content = @Content(schema = @Schema(implementation = LimpiezaResponseDTO.class)))
+    public ResponseEntity<List<LimpiezaResponseDTO>> obtenerTodas() {
+        List<Limpieza> limpiezas = limpiezaService.obtenerTodas();
+        List<LimpiezaResponseDTO> dtos = limpiezas.stream().map(this::toResponseDTO).toList();
+        return ResponseEntity.ok(dtos);
+    }
+@PostMapping
     @Operation(summary = "Agendar limpieza", description = "Agenda la limpieza asociada a una reserva y su propiedad.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Limpieza agendada",
                     content = @Content(schema = @Schema(implementation = LimpiezaResponseDTO.class),
                             examples = @ExampleObject(value = "{\"idLimpieza\":1,\"idPropiedad\":10,\"idReserva\":25,\"fechaProgramada\":\"2026-06-30T11:00:00\",\"estadoLimpieza\":\"PENDIENTE\"}"))),
-            @ApiResponse(responseCode = "400", description = "Datos de reserva inválidos")
+            @ApiResponse(responseCode = "400", description = "Datos de reserva invÃ¡lidos")
     })
     public ResponseEntity<LimpiezaResponseDTO> crearLimpieza(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
@@ -101,3 +111,4 @@ public class LimpiezaController {
         return dto;
     }
 }
+

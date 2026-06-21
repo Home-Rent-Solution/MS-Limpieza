@@ -1,6 +1,7 @@
 package com.HomeRentSolution.ms_limpieza.service;
 
 import com.HomeRentSolution.ms_limpieza.config.AppConfig;
+import com.HomeRentSolution.ms_limpieza.client.ReservaClient;
 import com.HomeRentSolution.ms_limpieza.dto.LimpiezaResponseDTO;
 import com.HomeRentSolution.ms_limpieza.dto.ReservaDTO;
 import com.HomeRentSolution.ms_limpieza.exception.LimpiezaNoEncontradaException;
@@ -9,6 +10,7 @@ import com.HomeRentSolution.ms_limpieza.model.Limpieza;
 import com.HomeRentSolution.ms_limpieza.repository.LimpiezaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import feign.FeignException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ public class LimpiezaService {
 
     private final LimpiezaRepository limpiezaRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final ReservaClient reservaClient;
 
     @Transactional(readOnly = true)
     public Limpieza obtenerEntidadPorId(Long id) {
@@ -41,6 +44,8 @@ public class LimpiezaService {
 
     @Transactional
     public LimpiezaResponseDTO agendarLimpieza(ReservaDTO request) {
+        validarReservaRemota(request);
+
         Limpieza nuevaLimpieza = new Limpieza();
         nuevaLimpieza.setIdReserva(request.getIdReserva());
         nuevaLimpieza.setIdPropiedad(request.getIdPropiedad());
@@ -54,6 +59,20 @@ public class LimpiezaService {
         response.setIdLimpieza(entidadGuardada.getIdLimpieza());
         response.setEstadoLimpieza(entidadGuardada.getEstadoLimpieza());
         return response;
+    }
+
+    private void validarReservaRemota(ReservaDTO request) {
+        try {
+            ReservaDTO reserva = reservaClient.obtenerPorIdReserva(request.getIdReserva());
+            if (reserva == null || !request.getIdReserva().equals(reserva.getIdReserva())) {
+                throw new IllegalStateException("La respuesta de MS-Reservas no corresponde a la reserva solicitada");
+            }
+        } catch (FeignException.NotFound ex) {
+            throw new IllegalArgumentException("No existe la reserva ID: " + request.getIdReserva(), ex);
+        } catch (FeignException ex) {
+            log.error("Error remoto al validar la reserva {}: HTTP {}", request.getIdReserva(), ex.status());
+            throw new IllegalStateException("MS-Reservas no esta disponible para agendar la limpieza", ex);
+        }
     }
 
     @Transactional

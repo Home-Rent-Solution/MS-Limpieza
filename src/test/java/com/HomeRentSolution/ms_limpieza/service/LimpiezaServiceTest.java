@@ -1,5 +1,6 @@
 package com.HomeRentSolution.ms_limpieza.service;
 
+import com.HomeRentSolution.ms_limpieza.client.ReservaClient;
 import com.HomeRentSolution.ms_limpieza.dto.LimpiezaResponseDTO;
 import com.HomeRentSolution.ms_limpieza.dto.ReservaDTO;
 import com.HomeRentSolution.ms_limpieza.exception.LimpiezaNoEncontradaException;
@@ -13,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import feign.FeignException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +34,9 @@ public class LimpiezaServiceTest {
 
     @Mock
     private RabbitTemplate rabbitTemplate;
+
+    @Mock
+    private ReservaClient reservaClient;
 
     // @InjectMocks inyecta los mocks en el servicio
     @InjectMocks
@@ -62,12 +67,34 @@ public class LimpiezaServiceTest {
     // PRUEBA 1: agendar limpieza correctamente
     @Test
     void agendarLimpieza_debeRetornarLimpiezaConEstadoPendiente() {
+        when(reservaClient.obtenerPorIdReserva(1L)).thenReturn(reservaDTO);
         when(limpiezaRepository.save(any(Limpieza.class))).thenReturn(limpieza);
 
         LimpiezaResponseDTO resultado = limpiezaService.agendarLimpieza(reservaDTO);
 
         assertEquals(EstadoLimpieza.PENDIENTE, resultado.getEstadoLimpieza());
         verify(limpiezaRepository, times(1)).save(any(Limpieza.class));
+    }
+
+    @Test
+    void agendarLimpieza_debeRechazarRespuestaRemotaInvalida() {
+        when(reservaClient.obtenerPorIdReserva(1L)).thenReturn(null);
+
+        assertThrows(IllegalStateException.class, () -> limpiezaService.agendarLimpieza(reservaDTO));
+        verifyNoInteractions(limpiezaRepository, rabbitTemplate);
+    }
+
+    @Test
+    void agendarLimpieza_debeManejarErrorRemoto() {
+        FeignException errorRemoto = mock(FeignException.class);
+        when(errorRemoto.status()).thenReturn(504);
+        when(reservaClient.obtenerPorIdReserva(1L)).thenThrow(errorRemoto);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> limpiezaService.agendarLimpieza(reservaDTO));
+
+        assertTrue(error.getMessage().contains("MS-Reservas"));
+        verifyNoInteractions(limpiezaRepository, rabbitTemplate);
     }
 
     // PRUEBA 2: obtener limpieza por ID que existe

@@ -8,6 +8,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 @FeignClient(name = "ms-reservas", url= "${ms.reservas.url}")
 public interface ReservaClient {
 
-    @GetMapping("/api/reservas/{id}")
+    @GetMapping("/api/v1/reservas/{id}")
     ReservaDTO obtenerPorIdReserva(@PathVariable("id") Long idReserva);
 }

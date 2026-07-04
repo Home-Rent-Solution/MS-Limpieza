@@ -14,14 +14,20 @@ public class AppConfig {
         return new Request.Options(5000, 10000);
     }
 
-    public static final String LIMPIEZAS_EXCHANGE        = "limpiezas.exchange";
-    public static final String RESERVA_CREADA_QUEUE      = "limpiezas.reserva-creada.queue";
-    public static final String RESERVA_CANCELADA_QUEUE   = "limpiezas.reserva-cancelada.queue";
-    public static final String ROUTING_ESTADO_CAMBIADO   = "limpieza.estado.cambiado";
+    public static final String LIMPIEZAS_EXCHANGE = "limpiezas.exchange";
+    public static final String RESERVAS_EXCHANGE = "reservas.exchange"; // NUEVO
+    public static final String RESERVA_CREADA_QUEUE = "limpiezas.reserva-creada.queue";
+    public static final String RESERVA_CANCELADA_QUEUE = "limpiezas.reserva-cancelada.queue";
+    public static final String ROUTING_ESTADO_CAMBIADO = "limpieza.estado.cambiado";
 
     @Bean
     public TopicExchange limpiezasExchange() {
         return new TopicExchange(LIMPIEZAS_EXCHANGE);
+    }
+
+    @Bean
+    public TopicExchange reservasExchange() {
+        return new TopicExchange(RESERVAS_EXCHANGE);
     }
 
     @Bean
@@ -35,17 +41,13 @@ public class AppConfig {
     }
 
     @Bean
-    public Binding bindingReservaCreada(Queue reservaCreadaLimpiezaQueue,
-                                        TopicExchange limpiezasExchange) {
-        return BindingBuilder.bind(reservaCreadaLimpiezaQueue)
-                .to(limpiezasExchange).with("reserva.creada");
+    public Binding bindingReservaCreada(Queue reservaCreadaLimpiezaQueue, TopicExchange reservasExchange) {
+        return BindingBuilder.bind(reservaCreadaLimpiezaQueue).to(reservasExchange).with("reserva.creada");
     }
 
     @Bean
-    public Binding bindingReservaCancelada(Queue reservaCanceladaLimpiezaQueue,
-                                           TopicExchange limpiezasExchange) {
-        return BindingBuilder.bind(reservaCanceladaLimpiezaQueue)
-                .to(limpiezasExchange).with("reserva.cancelada");
+    public Binding bindingReservaCancelada(Queue reservaCanceladaLimpiezaQueue, TopicExchange reservasExchange) {
+        return BindingBuilder.bind(reservaCanceladaLimpiezaQueue).to(reservasExchange).with("reserva.cancelada");
     }
 
     @Bean

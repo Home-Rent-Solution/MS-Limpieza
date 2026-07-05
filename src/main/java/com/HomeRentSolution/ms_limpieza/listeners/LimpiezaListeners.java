@@ -3,18 +3,24 @@ package com.HomeRentSolution.ms_limpieza.listeners;
 import com.HomeRentSolution.ms_limpieza.dto.ReservaDTO;
 import com.HomeRentSolution.ms_limpieza.repository.LimpiezaRepository;
 import com.HomeRentSolution.ms_limpieza.service.LimpiezaService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class LimpiezaListeners {
 
     private final LimpiezaService limpiezaService;
     private final LimpiezaRepository limpiezaRepository;
+
+
+    @Autowired
+    public LimpiezaListeners(LimpiezaService limpiezaService, LimpiezaRepository limpiezaRepository) {
+        this.limpiezaService = limpiezaService;
+        this.limpiezaRepository = limpiezaRepository;
+    }
 
     @RabbitListener(queues = "limpiezas.reserva-creada.queue")
     public void recibirNuevaReserva(ReservaDTO creacion) {

@@ -11,16 +11,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @RestController
 @RequestMapping("/api/v2/limpiezas")
-@RequiredArgsConstructor
 @Tag(name = "Limpiezas V2 (HATEOAS)",
         description = "Endpoints de limpieza con auto-navegación por enlaces")
 public class LimpiezaV2Controller {
@@ -28,6 +27,13 @@ public class LimpiezaV2Controller {
 
     private final LimpiezaService limpiezaService;
     private final LimpiezaAssembler assembler;
+
+
+    @Autowired
+    public LimpiezaV2Controller(LimpiezaService limpiezaService, LimpiezaAssembler assembler) {
+        this.limpiezaService = limpiezaService;
+        this.assembler = assembler;
+    }
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtener limpieza HATEOAS", description = "Retorna la limpieza con enlaces de navegación relacionados.")

@@ -3,17 +3,22 @@ package com.HomeRentSolution.ms_limpieza.config;
 import com.HomeRentSolution.ms_limpieza.model.EstadoLimpieza;
 import com.HomeRentSolution.ms_limpieza.model.Limpieza;
 import com.HomeRentSolution.ms_limpieza.repository.LimpiezaRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Component
-@RequiredArgsConstructor
 public class DataInitializar implements CommandLineRunner {
 
     private final LimpiezaRepository limpiezaRepository;
+
+
+    @Autowired
+    public DataInitializar(LimpiezaRepository limpiezaRepository) {
+        this.limpiezaRepository = limpiezaRepository;
+    }
 
     @Override
     public void run(String... args) {

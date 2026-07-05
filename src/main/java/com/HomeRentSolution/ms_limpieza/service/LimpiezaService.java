@@ -8,7 +8,6 @@ import com.HomeRentSolution.ms_limpieza.exception.LimpiezaNoEncontradaException;
 import com.HomeRentSolution.ms_limpieza.model.EstadoLimpieza;
 import com.HomeRentSolution.ms_limpieza.model.Limpieza;
 import com.HomeRentSolution.ms_limpieza.repository.LimpiezaRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import feign.FeignException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -16,15 +15,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class LimpiezaService {
 
     private final LimpiezaRepository limpiezaRepository;
     private final RabbitTemplate rabbitTemplate;
     private final ReservaClient reservaClient;
+
+
+    @Autowired
+    public LimpiezaService(LimpiezaRepository limpiezaRepository, RabbitTemplate rabbitTemplate, ReservaClient reservaClient) {
+        this.limpiezaRepository = limpiezaRepository;
+        this.rabbitTemplate = rabbitTemplate;
+        this.reservaClient = reservaClient;
+    }
 
     @Transactional(readOnly = true)
     public Limpieza obtenerEntidadPorId(Long id) {

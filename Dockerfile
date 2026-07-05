@@ -3,7 +3,7 @@ FROM maven:3.9.11-eclipse-temurin-25 AS build
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
-RUN --mount=type=cache,target=/root/.m2 mvn -B -DskipTests clean package
+RUN mvn clean package -DskipTests
 
 # Etapa 2: imagen final liviana solo con el JAR
 FROM eclipse-temurin:25-jre
